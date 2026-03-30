@@ -1,0 +1,58 @@
+name: Build & Push to GHCR
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_API: ${{ github.repository_owner }}/apirepobezmaske-api
+  IMAGE_NAME_WEB: ${{ github.repository_owner }}/webrepobezmaske-web
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---------------------------
+      # API IMAGE
+      # ---------------------------
+      - name: Build API image
+        run: |
+          docker build \
+            -t $REGISTRY/$IMAGE_NAME_API:latest \
+            -f api/Dockerfile \
+            ./api
+
+      - name: Push API image
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME_API:latest
+
+      # ---------------------------
+      # WEB IMAGE
+      # ---------------------------
+      - name: Build WEB image
+        run: |
+          docker build \
+            -t $REGISTRY/$IMAGE_NAME_WEB:latest \
+            -f web/Dockerfile \
+            ./web
+
+      - name: Push WEB image
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME_WEB:latest
